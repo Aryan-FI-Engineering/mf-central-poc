@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CAS Report Viewer</title>
+<style>
+  :root{
+    color-scheme: light;
+    --surface-0:#f3f4f6; --surface-1:#fcfcfb; --surface-2:#ffffff;
+    --line:#e3e4e2; --line-strong:#cfd1cd;
+    --ink:#0b0b0b; --ink-2:#52514e; --ink-3:#86857f;
+    --pos:#008300; --neg:#d23b36; --accent:#2a78d6;
+    --s1:#2a78d6;--s2:#eb6834;--s3:#1baf7a;--s4:#eda100;--s5:#e87ba4;--s6:#008300;--s7:#6250d6;--s8:#e34948;--sOther:#9a9a95;
+  }
+  @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+    color-scheme: dark;
+    --surface-0:#121211; --surface-1:#1a1a19; --surface-2:#232322;
+    --line:#2e2e2c; --line-strong:#3c3c39;
+    --ink:#f0efec; --ink-2:#c3c2b7; --ink-3:#8f8e85;
+    --pos:#36b836; --neg:#e66767; --accent:#3987e5;
+    --s1:#3987e5;--s2:#d95926;--s3:#199e70;--s4:#c98500;--s5:#d55181;--s6:#008300;--s7:#9085e9;--s8:#e66767;--sOther:#6f6f6a;
+  }}
+  :root[data-theme="dark"]{
+    color-scheme: dark;
+    --surface-0:#121211; --surface-1:#1a1a19; --surface-2:#232322;
+    --line:#2e2e2c; --line-strong:#3c3c39;
+    --ink:#f0efec; --ink-2:#c3c2b7; --ink-3:#8f8e85;
+    --pos:#36b836; --neg:#e66767; --accent:#3987e5;
+    --s1:#3987e5;--s2:#d95926;--s3:#199e70;--s4:#c98500;--s5:#d55181;--s6:#008300;--s7:#9085e9;--s8:#e66767;--sOther:#6f6f6a;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--surface-0);color:var(--ink);
+    font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}
+  header{position:sticky;top:0;z-index:5;background:var(--surface-1);border-bottom:1px solid var(--line);
+    padding:14px 20px;display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+  header h1{font-size:16px;margin:0;font-weight:650}
+  .who{color:var(--ink-2);font-size:13px}
+  .who b{color:var(--ink)}
+  .spacer{flex:1}
+  button,label.btn{font:inherit;border:1px solid var(--line-strong);background:var(--surface-2);color:var(--ink);
+    border-radius:7px;padding:7px 12px;cursor:pointer}
+  button:hover,label.btn:hover{border-color:var(--accent)}
+  main{max-width:1200px;margin:0 auto;padding:20px}
+  .empty{text-align:center;color:var(--ink-2);padding:64px 20px}
+  .empty .drop{margin-top:16px;border:2px dashed var(--line-strong);border-radius:12px;padding:40px;background:var(--surface-1)}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:20px}
+  .kpi{background:var(--surface-1);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+  .kpi .l{font-size:12px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.04em}
+  .kpi .v{font-size:22px;font-weight:650;margin-top:4px;font-variant-numeric:tabular-nums}
+  .kpi .s{font-size:12px;color:var(--ink-2);margin-top:2px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+  @media(max-width:860px){.grid2{grid-template-columns:1fr}}
+  .card{background:var(--surface-1);border:1px solid var(--line);border-radius:10px;padding:16px}
+  .card h2{font-size:13px;margin:0 0 12px;color:var(--ink-2);text-transform:uppercase;letter-spacing:.04em;font-weight:650}
+  .donutwrap{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+  .legend{font-size:13px;display:grid;gap:5px;min-width:180px}
+  .legend .row{display:flex;align-items:center;gap:8px}
+  .legend .sw{width:10px;height:10px;border-radius:2px;flex:none}
+  .legend .nm{flex:1;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .legend .vl{font-variant-numeric:tabular-nums;color:var(--ink)}
+  .bars{display:grid;gap:7px}
+  .bar{display:grid;grid-template-columns:120px 1fr auto;gap:8px;align-items:center;font-size:13px}
+  .bar .track{background:var(--surface-2);border-radius:4px;height:16px;overflow:hidden}
+  .bar .fill{height:100%;border-radius:4px}
+  .tabs{display:flex;gap:4px;margin-bottom:12px;flex-wrap:wrap}
+  .tabs button{border-radius:999px;padding:6px 14px}
+  .tabs button[aria-selected="true"]{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .toolbar{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+  input[type=search],select{font:inherit;border:1px solid var(--line-strong);background:var(--surface-2);color:var(--ink);
+    border-radius:7px;padding:7px 10px}
+  input[type=search]{flex:1;min-width:160px}
+  .tablewrap{overflow:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface-1)}
+  table{border-collapse:collapse;width:100%;font-size:13px}
+  th,td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+  th{position:sticky;top:0;background:var(--surface-2);cursor:pointer;user-select:none;font-weight:600;color:var(--ink-2)}
+  th.num,td.num{text-align:right;font-variant-numeric:tabular-nums}
+  tbody tr:hover{background:var(--surface-2)}
+  .pos{color:var(--pos)} .neg{color:var(--neg)}
+  .pill{font-size:11px;padding:1px 7px;border-radius:999px;border:1px solid var(--line-strong);color:var(--ink-2)}
+  .muted{color:var(--ink-3)}
+  .count{color:var(--ink-3);font-size:12px;margin-left:4px}
+  .foot{color:var(--ink-3);font-size:12px;margin-top:10px}
+</style>
+</head>
+<body>
+<header>
+  <h1>CAS Report</h1>
+  <span id="who" class="who"></span>
+  <span class="spacer"></span>
+  <label class="btn">Load cas.json<input id="file" type="file" accept="application/json,.json" hidden></label>
+  <button id="theme" title="Toggle theme">◐</button>
+</header>
+<main id="main">
+  <div class="empty" id="empty">
+    <h2>Load a CAS JSON to begin</h2>
+    <p class="muted">Everything is computed in your browser. Nothing is uploaded or stored.</p>
+    <div class="drop" id="drop">Drag <code>cas.json</code> here, or use <b>Load cas.json</b> above.</div>
+  </div>
+  <div id="report" hidden></div>
+</main>
+<script>
+const INR=new Intl.NumberFormat('en-IN',{maximumFractionDigits:0});
+const INR2=new Intl.NumberFormat('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
+const U3=new Intl.NumberFormat('en-IN',{minimumFractionDigits:3,maximumFractionDigits:3});
+const num=v=>{const n=parseFloat(String(v??'').replace(/,/g,''));return isFinite(n)?n:0;};
+const SER=['--s1','--s2','--s3','--s4','--s5','--s6','--s7','--s8'].map(v=>`var(${v})`);
+const esc=s=>String(s??'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+
+let MODEL=null;
+
+function normalize(doc){
+  // Supports the transaction shape (data[].dtStatic/dtSummary/dtTransaction)
+  // and the summary shape (data[].summary/schemes).
+  const block=(doc.data&&doc.data[0])||{};
+  const holdings=[], txns=[];
+  const summ=block.dtSummary||block.summary||[];
+  for(const r of summ){
+    const cost=num(r.costValue), mv=num(r.marketValue??r.currentMktValue);
+    holdings.push({
+      amc:r.amcName||r.amc, scheme:(r.schemeName||r.scheme||'').trim(),
+      folio:r.folio, isin:r.isin, asset:r.assetType||'',
+      rta:r.rtaCode||r.rtaName||'', demat:(r.isDemat==='Y'),
+      units:num(r.closingBalance??r.availableUnits), nav:num(r.nav),
+      navDate:r.lastNavDate||r.navDate||'', cost, mv, gain:mv-cost,
+      gpct: cost>0?((mv-cost)/cost*100):0
+    });
+  }
+  const tx=block.dtTransaction||[];
+  for(const r of tx){
+    const sign=String(r.trxnSign||'').trim();
+    const dir= sign==='-'?-1 : sign==='+'?1 : 0;
+    txns.push({
+      date:r.trxnDate||r.postedDate||'', amc:r.amcName||r.amc,
+      scheme:(r.schemeName||r.scheme||'').trim(), folio:r.folio,
+      desc:(r.trxnDesc||'').trim(), type:r.trxnTypeFlag||'',
+      units:dir*num(r.trxnUnits), amount:dir*num(r.trxnAmount),
+      price:num(r.purchasePrice), tax:num(r.totalTax), dir
+    });
+  }
+  const inv=doc.investorDetails||{};
+  const name=[inv.investorFirstName,inv.investorMiddleName,inv.investorLastName].filter(Boolean).join(' ')
+        || (block.dtStatic&&block.dtStatic[0]&&[block.dtStatic[0].investorFirstName,block.dtStatic[0].investorLastName].filter(Boolean).join(' '))||'Investor';
+  return {
+    name, pan:doc.pan||'', planType:doc.planType||'', reqId:doc.reqId||'',
+    from:doc.fromDate||'', to:doc.toDate||'',
+    folios:(block.dtStatic||[]).length,
+    holdings, txns
+  };
+}
+
+function groupSum(rows,key,val){
+  const m=new Map();
+  for(const r of rows){const k=r[key]||'—';m.set(k,(m.get(k)||0)+val(r));}
+  return [...m].filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]);
+}
+
+function donut(pairs,total){
+  const top=pairs.slice(0,7);
+  const rest=pairs.slice(7).reduce((s,[,v])=>s+v,0);
+  const items=rest>0?[...top,['Other',rest]]:top;
+  const R=52,C=2*Math.PI*R; let off=0;
+  const segs=items.map(([n,v],i)=>{
+    const frac=v/total, col=i<7?SER[i]:'var(--sOther)';
+    const dash=`${frac*C} ${C}`, s=`<circle r="${R}" cx="70" cy="70" fill="none" stroke="${col}" stroke-width="18" stroke-dasharray="${dash}" stroke-dashoffset="${-off*C}" transform="rotate(-90 70 70)"><title>${esc(n)}: ₹${INR.format(v)} (${(frac*100).toFixed(1)}%)</title></circle>`;
+    off+=frac; return s;
+  }).join('');
+  const leg=items.map(([n,v],i)=>`<div class="row"><span class="sw" style="background:${i<7?SER[i]:'var(--sOther)'}"></span><span class="nm" title="${esc(n)}">${esc(n)}</span><span class="vl">₹${INR.format(v)}</span></div>`).join('');
+  return `<div class="donutwrap"><svg viewBox="0 0 140 140" width="150" height="150" style="flex:none">${segs}
+    <text x="70" y="66" text-anchor="middle" fill="var(--ink-2)" font-size="9">TOTAL</text>
+    <text x="70" y="80" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="650">₹${INR.format(total)}</text></svg>
+    <div class="legend">${leg}</div></div>`;
+}
+
+function bars(pairs,total){
+  const max=Math.max(...pairs.map(([,v])=>v),1);
+  return `<div class="bars">`+pairs.map(([n,v],i)=>`<div class="bar"><span class="muted" title="${esc(n)}" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(n)}</span>
+    <span class="track"><span class="fill" style="width:${v/max*100}%;background:${SER[i%8]}"></span></span>
+    <span class="num">₹${INR.format(v)}</span></div>`).join('')+`</div>`;
+}
+
+let sortState={h:{k:'mv',d:-1}, t:{k:'date',d:-1}};
+function table(id,cols,rows,state){
+  const th=cols.map(c=>`<th class="${c.num?'num':''}" data-k="${c.k}">${c.t}${state.k===c.k?(state.d<0?' ▾':' ▴'):''}</th>`).join('');
+  const body=rows.map(r=>'<tr>'+cols.map(c=>{
+    let v=r[c.k]; let cls=c.num?'num':''; let disp=c.fmt?c.fmt(v,r):esc(v);
+    if(c.sign&&typeof v==='number') cls+=v>0?' pos':v<0?' neg':'';
+    return `<td class="${cls}">${disp}</td>`;
+  }).join('')+'</tr>').join('');
+  return `<div class="tablewrap"><table id="${id}"><thead><tr>${th}</tr></thead><tbody>${body}</tbody></table></div>`;
+}
+
+function render(){
+  const m=MODEL;
+  document.getElementById('empty').hidden=true;
+  const rep=document.getElementById('report'); rep.hidden=false;
+  document.getElementById('who').innerHTML=`<b>${esc(m.name)}</b> · PAN ${esc(m.pan)} · plan ${esc(m.planType||'—')} · ${esc(m.from)} → ${esc(m.to)}`;
+
+  const active=m.holdings.filter(h=>h.units>0);
+  const cost=active.reduce((s,h)=>s+h.cost,0), mv=active.reduce((s,h)=>s+h.mv,0), gain=mv-cost;
+  const amcs=new Set(active.map(h=>h.amc)).size;
+  const inflow=m.txns.filter(t=>t.dir>0).reduce((s,t)=>s+t.amount,0);
+  const outflow=m.txns.filter(t=>t.dir<0).reduce((s,t)=>s+t.amount,0);
+
+  const kpi=(l,v,s)=>`<div class="kpi"><div class="l">${l}</div><div class="v">${v}</div>${s?`<div class="s">${s}</div>`:''}</div>`;
+  const gcls=gain>=0?'pos':'neg';
+  const kpis=`<div class="kpis">
+    ${kpi('Current value','₹'+INR.format(mv))}
+    ${kpi('Invested','₹'+INR.format(cost))}
+    ${kpi('Gain / Loss',`<span class="${gcls}">₹${INR.format(gain)}</span>`, `<span class="${gcls}">${cost>0?(gain/cost*100>=0?'+':'')+ (gain/cost*100).toFixed(1):'0'}%</span>`)}
+    ${kpi('Active schemes',active.length,`${m.folios} folios · ${amcs} AMCs`)}
+    ${kpi('Transactions',m.txns.length,`in ₹${INR.format(inflow)} · out ₹${INR.format(Math.abs(outflow))}`)}
+  </div>`;
+
+  const byAmc=groupSum(active,'amc',h=>h.mv);
+  const byAsset=groupSum(active,'asset',h=>h.mv);
+  const charts=`<div class="grid2">
+    <div class="card"><h2>Allocation by AMC</h2>${donut(byAmc,mv)}</div>
+    <div class="card"><h2>Allocation by asset type</h2>${bars(byAsset,mv)}</div>
+  </div>`;
+
+  rep.innerHTML=kpis+charts+
+    `<div class="card" style="margin-bottom:20px">
+      <div class="tabs" role="tablist">
+        <button role="tab" aria-selected="true" data-tab="hold">Holdings <span class="count">${active.length}</span></button>
+        <button role="tab" aria-selected="false" data-tab="txn">Transactions <span class="count">${m.txns.length}</span></button>
+      </div>
+      <div id="pane"></div>
+    </div>`;
+
+  rep.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{
+    rep.querySelectorAll('.tabs button').forEach(x=>x.setAttribute('aria-selected', x===b));
+    b.dataset.tab==='hold'?paneHoldings(active):paneTxns(m.txns);
+  });
+  paneHoldings(active);
+}
+
+function wireSort(id,rows,cols,state,repaint){
+  document.querySelectorAll(`#${id} th`).forEach(th=>th.onclick=()=>{
+    const k=th.dataset.k; state.d = state.k===k? -state.d : -1; state.k=k;
+    rows.sort((a,b)=>{const x=a[k],y=b[k]; const c=(typeof x==='number'&&typeof y==='number')?x-y:String(x).localeCompare(String(y)); return c*state.d;});
+    repaint();
+  });
+}
+
+function paneHoldings(rows){
+  const pane=document.getElementById('pane');
+  const cols=[
+    {k:'amc',t:'AMC'},{k:'scheme',t:'Scheme'},{k:'folio',t:'Folio'},
+    {k:'asset',t:'Type',fmt:v=>`<span class="pill">${esc(v||'—')}</span>`},
+    {k:'units',t:'Units',num:1,fmt:v=>U3.format(v)},
+    {k:'nav',t:'NAV',num:1,fmt:v=>INR2.format(v)},
+    {k:'cost',t:'Invested',num:1,fmt:v=>'₹'+INR.format(v)},
+    {k:'mv',t:'Value',num:1,fmt:v=>'₹'+INR.format(v)},
+    {k:'gain',t:'Gain',num:1,sign:1,fmt:v=>(v>=0?'+':'')+'₹'+INR.format(v)},
+    {k:'gpct',t:'%',num:1,sign:1,fmt:v=>(v>=0?'+':'')+v.toFixed(1)},
+  ];
+  let q='';
+  const paint=()=>{
+    const f=rows.filter(r=>!q||`${r.amc} ${r.scheme} ${r.folio}`.toLowerCase().includes(q));
+    pane.querySelector('.tablewrap')?.remove();
+    pane.insertAdjacentHTML('beforeend',table('tH',cols,f,sortState.h));
+    wireSort('tH',f,cols,sortState.h,paint);
+  };
+  pane.innerHTML=`<div class="toolbar"><input type="search" placeholder="Filter AMC / scheme / folio…"></div>`;
+  pane.querySelector('input').oninput=e=>{q=e.target.value.toLowerCase();paint();};
+  rows.sort((a,b)=>(b[sortState.h.k]-a[sortState.h.k])*(-sortState.h.d>0?-1:1));
+  paint();
+}
+
+function paneTxns(rows){
+  const pane=document.getElementById('pane');
+  const amcOpts=[...new Set(rows.map(r=>r.amc))].sort();
+  const cols=[
+    {k:'date',t:'Date'},{k:'amc',t:'AMC'},{k:'scheme',t:'Scheme'},{k:'folio',t:'Folio'},
+    {k:'desc',t:'Description'},{k:'type',t:'Type',fmt:v=>`<span class="pill">${esc(v||'—')}</span>`},
+    {k:'units',t:'Units',num:1,sign:1,fmt:v=>v?(v>0?'+':'')+U3.format(v):'—'},
+    {k:'amount',t:'Amount',num:1,sign:1,fmt:v=>v?(v>0?'+':'')+'₹'+INR.format(v):'—'},
+    {k:'price',t:'Price',num:1,fmt:v=>v?INR2.format(v):'—'},
+    {k:'tax',t:'Tax',num:1,fmt:v=>v?'₹'+INR2.format(v):'—'},
+  ];
+  let q='',amc='',dir='';
+  const paint=()=>{
+    const f=rows.filter(r=>(!q||`${r.scheme} ${r.desc} ${r.folio}`.toLowerCase().includes(q))
+      && (!amc||r.amc===amc) && (dir===''||String(r.dir)===dir));
+    pane.querySelector('.tablewrap')?.remove();
+    pane.querySelector('.foot')?.remove();
+    pane.insertAdjacentHTML('beforeend',table('tT',cols,f,sortState.t));
+    pane.insertAdjacentHTML('beforeend',`<div class="foot">${f.length} of ${rows.length} transactions</div>`);
+    wireSort('tT',f,cols,sortState.t,paint);
+  };
+  pane.innerHTML=`<div class="toolbar">
+    <input type="search" placeholder="Filter scheme / description / folio…">
+    <select id="fA"><option value="">All AMCs</option>${amcOpts.map(a=>`<option>${esc(a)}</option>`).join('')}</select>
+    <select id="fD"><option value="">All flows</option><option value="1">Inflow (buy)</option><option value="-1">Outflow (sell)</option><option value="0">Non-financial</option></select>
+  </div>`;
+  pane.querySelector('input').oninput=e=>{q=e.target.value.toLowerCase();paint();};
+  pane.querySelector('#fA').onchange=e=>{amc=e.target.value;paint();};
+  pane.querySelector('#fD').onchange=e=>{dir=e.target.value;paint();};
+  rows.sort((a,b)=>String(b.date).localeCompare(String(a.date)));
+  paint();
+}
+
+function load(text){
+  try{ MODEL=normalize(JSON.parse(text)); render(); }
+  catch(e){ alert('Could not read CAS JSON: '+e.message); }
+}
+document.getElementById('file').onchange=e=>{const f=e.target.files[0];if(f)f.text().then(load);};
+const drop=document.getElementById('drop');
+['dragover','dragenter'].forEach(ev=>document.addEventListener(ev,e=>{e.preventDefault();}));
+document.addEventListener('drop',e=>{e.preventDefault();const f=e.dataTransfer.files[0];if(f)f.text().then(load);});
+document.getElementById('theme').onclick=()=>{
+  const cur=document.documentElement.getAttribute('data-theme');
+  document.documentElement.setAttribute('data-theme', cur==='dark'?'light':'dark');
+};
+
+// Auto-open the portfolio when the QR step handed a CAS over via sessionStorage (same origin, one-shot).
+try{
+  const pend=sessionStorage.getItem('mfc_cas_pending');
+  if(pend){ sessionStorage.removeItem('mfc_cas_pending'); load(pend); }
+}catch{}
+</script>
+</body>
+</html>

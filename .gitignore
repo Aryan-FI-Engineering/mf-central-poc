@@ -1,0 +1,11 @@
+target/
+.idea/
+*.iml
+.vscode/
+.DS_Store
+
+# Never commit MFCentral credentials or keys. Real values live in ~/.mfcentral/ (see README).
+*secrets*.properties
+!config/mfcentral-secrets.example.properties
+*.jwks.json
+*.jwk.json

@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MFCentral CAS POC</title>
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+<main>
+  <h1>Fetch your CAS from MFCentral</h1>
+  <p class="sub">Step 1 of 2. MFCentral sends an OTP to the mobile/email registered against the PAN and takes you to its portal.</p>
+
+  <form id="start">
+    <label for="pan">PAN</label>
+    <input id="pan" name="pan" required maxlength="10" autocomplete="off" style="text-transform:uppercase">
+
+    <div class="row">
+      <div>
+        <label for="mobile">Mobile <small>(registered with the folios)</small></label>
+        <input id="mobile" name="mobile" inputmode="tel" placeholder="9876543210">
+      </div>
+      <div>
+        <label for="email">or Email</label>
+        <input id="email" name="email" type="email">
+      </div>
+    </div>
+
+    <div class="row">
+      <div>
+        <label for="fromDate">From <small>(optional: set both dates for a transaction-level CAS)</small></label>
+        <input id="fromDate" name="fromDate" type="date">
+      </div>
+      <div>
+        <label for="toDate">To</label>
+        <input id="toDate" name="toDate" type="date">
+      </div>
+    </div>
+
+    <button type="submit">Request CAS</button>
+    <p id="status"></p>
+  </form>
+
+  <p class="sub">Already have the QR from MFCentral? <a href="upload.html">Upload it</a>.</p>
+</main>
+
+<script>
+  const form = document.getElementById('start');
+  const status = document.getElementById('status');
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const button = form.querySelector('button');
+    button.disabled = true;
+    status.className = '';
+    status.textContent = 'Calling newCasRequest…';
+
+    const data = Object.fromEntries(new FormData(form));
+    for (const k of ['fromDate', 'toDate']) if (!data[k]) delete data[k];
+
+    try {
+      const res = await fetch('api/cas-requests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      const body = await res.json();
+      if (!res.ok) {
+        const mfc = body.mfcErrors ? `\n${JSON.stringify(body.mfcErrors, null, 2)}` : '';
+        throw new Error((body.detail || res.statusText) + mfc);
+      }
+
+      status.className = 'ok';
+      status.textContent = `Started. clientRefNo ${body.clientRefNo}, reqId ${body.reqId}. MFCentral's full reply:`;
+      const pre = document.createElement('pre');
+      pre.textContent = JSON.stringify(body.mfcResponse, null, 2);
+      const link = Object.assign(document.createElement('a'), { href: body.casPortalUrl, textContent: 'Continue to MFCentral →' });
+      status.after(pre, link);
+    } catch (err) {
+      status.className = 'error';
+      status.textContent = err.message;
+      button.disabled = false;
+    }
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,24 @@
+spring:
+  application:
+    name: mf-central-poc
+  config:
+    # Credentials are kept outside the repo. Override the location with MFC_SECRETS_FILE.
+    import: "optional:file:${MFC_SECRETS_FILE:${user.home}/.mfcentral/secrets.properties}"
+  servlet:
+    multipart:
+      max-file-size: 2MB
+      max-request-size: 2MB
+
+server:
+  port: 8080
+
+mfc:
+  token-path: /oauth/token
+  # Where MFC redirects the investor after the QR is downloaded. Must be whitelisted with MFC for PROD.
+  redirect-url: http://localhost:8080/upload.html
+
+logging:
+  pattern:
+    level: "%5p [%X{clientRefNo:-}]"
+  level:
+    com.fundsindia.mfcpoc: INFO
